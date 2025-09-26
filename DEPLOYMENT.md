@@ -46,7 +46,7 @@ Le projet est composÃ© de 4 parties :
    PORT=10000
    PostgreSQL_URI=[GÃ©nÃ©rÃ© automatiquement par la base de donnÃ©es]
    JWT_SECRET=[GÃ©nÃ©rÃ© automatiquement]
-   CLIENT_URL=https://reservation-client.netlify.app
+   CLIENT_URL=https://reservation-api-5sb6.onrender.com
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
    SMTP_USER=[Votre email Gmail]
@@ -126,7 +126,7 @@ AprÃ¨s le dÃ©ploiement, vous devrez :
 
 AprÃ¨s dÃ©ploiement, vous aurez :
 - **API** : `https://reservation-api.onrender.com`
-- **Client Public** : `https://reservation-client.netlify.app`
+- **Client Public** : `https://reservation-api-5sb6.onrender.com`
 - **Admin** : `https://reservation-admin.netlify.app`
 - **Mobile** : Application Expo (dÃ©veloppement) ou APK/IPA (production)
 
@@ -156,4 +156,5 @@ Pour mettre Ã  jour l'application :
 1. Poussez vos modifications sur GitHub
 2. Render redÃ©ploiera automatiquement
 3. Ou dÃ©clenchez manuellement un redÃ©ploiement depuis le dashboard
+
 

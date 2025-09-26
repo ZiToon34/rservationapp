@@ -39,7 +39,7 @@
 - [ ] Tester la connexion Ã  la base de donnÃ©es
 
 ### 6. Tests Post-DÃ©ploiement
-- [ ] Tester l'API : `https://reservation-api.onrender.com`
+- [ ] Tester l'API : `https://reservation-api-5sb6.onrender.com`
 - [ ] Tester le client public : `https://reservation-client.netlify.app`
 - [ ] Tester l'admin : `https://reservation-admin.netlify.app`
 - [ ] Tester l'application mobile avec Expo
@@ -89,4 +89,5 @@ cd admin-web && npm run build
 - Documentation Render : [render.com/docs](https://render.com/docs)
 - Guide complet : `DEPLOYMENT.md`
 - Variables d'environnement : `RENDER_ENV_VARS.md`
+
 

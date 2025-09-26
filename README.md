@@ -27,7 +27,7 @@ Ce monorepo contient :
    ```bash
    cd web-client
    npm install
-   echo "VITE_API_URL=http://localhost:4000/api" > .env
+   echo "VITE_API_URL=https://reservation-api-5sb6.onrender.com/api" > .env
    npm run dev
    ```
 
@@ -35,7 +35,7 @@ Ce monorepo contient :
    ```bash
    cd admin-web
    npm install
-   echo "VITE_API_URL=http://localhost:4000/api" > .env
+   echo "VITE_API_URL=https://reservation-api-5sb6.onrender.com/api" > .env
    npm run dev
    ```
 
@@ -67,3 +67,4 @@ Ce monorepo contient :
 - `API/README.md`, `admin-web/README.md`, `web-client/README.md`, `mobile-admin/README.md` : instructions détaillées par projet
 
 Bon développement et bonne dégustation !
+

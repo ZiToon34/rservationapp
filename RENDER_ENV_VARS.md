@@ -55,3 +55,4 @@ Pour configurer l'envoi d'emails :
 - Testez l'envoi d'emails aprÃ¨s le dÃ©ploiement
 - Sauvegardez rÃ©guliÃ¨rement votre base de donnÃ©es
 
+
