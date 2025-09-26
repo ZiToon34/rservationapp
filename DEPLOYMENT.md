@@ -70,7 +70,7 @@ Le projet est composÃ© de 4 parties :
    - **Publish Directory** : `web-client/dist`
    - **Environment Variables** :
      ```
-     VITE_API_URL=https://reservation-api-5sb6.onrender.com/
+     VITE_API_URL=https://reservation-api-5sb6.onrender.com/api
      ```
 
 #### Application Admin
