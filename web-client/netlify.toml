@@ -12,7 +12,7 @@
 
 # Variables d'environnement pour le build
 [context.production.environment]
-  VITE_API_URL = "https://reservation-api.onrender.com/api"
+  VITE_API_URL = "https://reservation-api-5sb6.onrender.com"
 
 [context.deploy-preview.environment]
-  VITE_API_URL = "https://reservation-api.onrender.com/api"
+  VITE_API_URL = "https://reservation-api-5sb6.onrender.com"
