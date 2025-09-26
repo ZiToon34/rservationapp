@@ -1,5 +1,5 @@
-﻿// src/server.js
-// Point d'entrée : lance la connexion Mongo et démarre le serveur HTTP.
+// src/server.js
+// Point d'entree : verifie la connexion PostgreSQL et demarre le serveur HTTP.
 const app = require('./app');
 const env = require('./config/env');
 const logger = require('./config/logger');
@@ -12,10 +12,10 @@ const { schedulePurgeJob } = require('./jobs/purgeJob');
     schedulePurgeJob();
 
     app.listen(env.port, () => {
-      logger.info(`🚀 API prête sur le port ${env.port}`);
+      logger.info(`[API] Serveur demarre sur le port ${env.port}`);
     });
   } catch (error) {
-    logger.error({ err: error }, 'Impossible de démarrer le serveur');
+    logger.error({ err: error }, 'Impossible de demarrer le serveur');
     process.exit(1);
   }
 })();

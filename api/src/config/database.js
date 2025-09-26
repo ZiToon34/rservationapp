@@ -1,22 +1,18 @@
 ﻿// src/config/database.js
-// Initialise la connexion MongoDB via Mongoose.
-const mongoose = require('mongoose');
-const env = require('./env');
+// Vérifie la connexion PostgreSQL.
+const { pool } = require('../db');
 const logger = require('./logger');
 
 /**
- * Initialise la connexion à MongoDB.
- * @returns {Promise<void>} Promesse résolue quand la connexion est prête.
+ * Initialise la connexion à PostgreSQL en effectuant une requête simple.
+ * @returns {Promise<void>} Promesse résolue quand la connexion est validée.
  */
 async function connectDatabase() {
   try {
-    mongoose.set('strictQuery', true);
-    await mongoose.connect(env.mongodbUri, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    logger.info('✅ Connexion MongoDB réussie');
+    await pool.query('SELECT 1');
+    logger.info('✅ Connexion PostgreSQL réussie');
   } catch (error) {
-    logger.error({ err: error }, '❌ Échec de connexion MongoDB');
+    logger.error({ err: error }, '❌ Échec de connexion PostgreSQL');
     throw error;
   }
 }

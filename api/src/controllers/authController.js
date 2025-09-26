@@ -2,41 +2,35 @@
 // Gère l'inscription (seed), la connexion et la déconnexion logique pour les admins.
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Admin = require('../models/Admin');
+const adminRepository = require('../repositories/adminRepository');
 const env = require('../config/env');
 const { ValidationError, AuthError } = require('../utils/errors');
 
 const SALT_ROUNDS = 10;
 
-/**
- * Enregistre un nouvel administrateur (à utiliser uniquement en phase d'initialisation).
- */
 async function register(req, res, next) {
   try {
     const { email, password } = req.body;
-    const existing = await Admin.findOne({ email });
+    const existing = await adminRepository.findByEmail(email);
     if (existing) {
       throw new ValidationError('Un compte existe déjà avec cet e-mail.');
     }
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const admin = await Admin.create({ email, passwordHash });
+    const admin = await adminRepository.create({ email, passwordHash });
     res.status(201).json({
       success: true,
       message: 'Administrateur créé.',
-      data: { id: admin._id.toString(), email: admin.email },
+      data: { id: admin.id, email: admin.email },
     });
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Authentifie un administrateur et renvoie un JWT.
- */
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ email });
+    const admin = await adminRepository.findByEmail(email);
     if (!admin) {
       throw new AuthError('Identifiants incorrects.');
     }
@@ -48,7 +42,7 @@ async function login(req, res, next) {
 
     const token = jwt.sign(
       {
-        sub: admin._id.toString(),
+        sub: admin.id,
         email: admin.email,
       },
       env.jwtSecret,
@@ -60,7 +54,7 @@ async function login(req, res, next) {
       message: 'Connexion réussie.',
       data: {
         token,
-        admin: { id: admin._id.toString(), email: admin.email },
+        admin: { id: admin.id, email: admin.email },
       },
     });
   } catch (error) {
@@ -68,9 +62,6 @@ async function login(req, res, next) {
   }
 }
 
-/**
- * Confirme la déconnexion côté client (suppression du token côté front).
- */
 function logout(_req, res) {
   res.json({ success: true, message: 'Déconnexion effectuée côté client.' });
 }

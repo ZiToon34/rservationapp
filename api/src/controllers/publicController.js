@@ -1,14 +1,14 @@
 ﻿// src/controllers/publicController.js
 // Donne accès à certaines informations publiques (paramètres et calendrier d'ouverture).
-const Setting = require('../models/Setting');
-const Schedule = require('../models/Schedule');
-const SpecialDay = require('../models/SpecialDay');
+const settingsRepository = require('../repositories/settingsRepository');
+const scheduleRepository = require('../repositories/scheduleRepository');
+const specialDayRepository = require('../repositories/specialDayRepository');
 const { parseIsoDateParis, todayParis } = require('../utils/time');
 const { NotFoundError } = require('../utils/errors');
 
 async function getPublicSettings(_req, res, next) {
   try {
-    const settings = await Setting.findOne();
+    const settings = await settingsRepository.getSettings();
     if (!settings) {
       throw new NotFoundError('Paramètres indisponibles.');
     }
@@ -31,13 +31,11 @@ async function getPublicCalendar(req, res, next) {
     const start = from ? parseIsoDateParis(from) : todayParis();
     const end = to ? parseIsoDateParis(to) : start.add(30, 'day');
 
-    const schedules = await Schedule.find().sort({ dayOfWeek: 1 });
-    const specialDays = await SpecialDay.find({
-      date: {
-        $gte: start.toDate(),
-        $lte: end.toDate(),
-      },
-    }).sort({ date: 1 });
+    const schedules = await scheduleRepository.getAll();
+    const specialDays = await specialDayRepository.findRange(
+      start.format('YYYY-MM-DD'),
+      end.format('YYYY-MM-DD'),
+    );
 
     res.json({
       success: true,

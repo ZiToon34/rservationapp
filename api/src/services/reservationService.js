@@ -1,20 +1,15 @@
 ﻿// src/services/reservationService.js
 // Contient toute la logique métier liée aux disponibilités et réservations.
-const Setting = require('../models/Setting');
-const Schedule = require('../models/Schedule');
-const SpecialDay = require('../models/SpecialDay');
-const Reservation = require('../models/Reservation');
+const settingsRepository = require('../repositories/settingsRepository');
+const scheduleRepository = require('../repositories/scheduleRepository');
+const specialDayRepository = require('../repositories/specialDayRepository');
+const reservationRepository = require('../repositories/reservationRepository');
 const { ValidationError, NotFoundError } = require('../utils/errors');
 const { parseIsoDateParis, dayjs, PARIS_TZ } = require('../utils/time');
 const { isValidTime } = require('../utils/validation');
 
 const SLOT_DURATION_MIN = 15;
 
-/**
- * Génère les créneaux de 15 minutes pour une plage horaire donnée.
- * @param {{ start: string, end: string }} window
- * @returns {string[]} Tableau d'horaires HH:MM.
- */
 function generateSlots(window) {
   const slots = [];
   const start = dayjs.tz(`2000-01-01T${window.start}:00`, PARIS_TZ);
@@ -29,11 +24,6 @@ function generateSlots(window) {
   return slots;
 }
 
-/**
- * Retourne la liste complète des créneaux du jour (midi + soir).
- * @param {import('../models/Schedule')} schedule
- * @returns {string[]}
- */
 function buildDailySlots(schedule) {
   const slots = [];
   if (schedule.lunch?.start && schedule.lunch?.end) {
@@ -45,13 +35,6 @@ function buildDailySlots(schedule) {
   return slots;
 }
 
-/**
- * Filtre les créneaux selon les délais min / max.
- * @param {string[]} slots
- * @param {dayjs.Dayjs} dateParis
- * @param {import('../models/Setting')} settings
- * @returns {string[]}
- */
 function filterByDelays(slots, dateParis, settings) {
   const now = dayjs().tz(PARIS_TZ);
 
@@ -70,19 +53,11 @@ function filterByDelays(slots, dateParis, settings) {
   });
 }
 
-/**
- * Tente d'affecter un groupe à une combinaison de tables.
- * @param {number[]} availableTables Copie mutable des places restantes par table.
- * @param {number} peopleCount Taille du groupe.
- * @returns {boolean} true si l'allocation est possible.
- */
 function allocateTables(availableTables, peopleCount) {
-  // On tri du plus petit au plus grand pour optimiser la recherche.
   const tables = availableTables
     .map((seats, index) => ({ seats, index }))
     .sort((a, b) => a.seats - b.seats);
 
-  // Première tentative : une seule table suffit.
   for (const table of tables) {
     if (table.seats >= peopleCount) {
       availableTables[table.index] = 0;
@@ -90,15 +65,12 @@ function allocateTables(availableTables, peopleCount) {
     }
   }
 
-  // Sinon on cherche une combinaison (approche brute force mais tables limitées).
   const seatsArray = tables.map((t) => t.seats);
-
   const result = findCombination(seatsArray, peopleCount);
   if (!result) {
     return false;
   }
 
-  // On consomme les tables utilisées.
   for (const seat of result) {
     const match = tables.find((t) => t.seats === seat && availableTables[t.index] !== 0);
     if (match) {
@@ -109,12 +81,6 @@ function allocateTables(availableTables, peopleCount) {
   return true;
 }
 
-/**
- * Recherche une combinaison de tailles de tables couvrant un groupe.
- * @param {number[]} seatsTables
- * @param {number} target
- * @returns {number[]|null}
- */
 function findCombination(seatsTables, target) {
   const total = seatsTables.length;
   const maxCombinations = 1 << total;
@@ -142,19 +108,8 @@ function findCombination(seatsTables, target) {
   return best;
 }
 
-/**
- * Vérifie si un créneau peut accepter une réservation supplémentaire.
- * @param {string} dateIso Date YYYY-MM-DD.
- * @param {string} time Heure HH:MM.
- * @param {number} peopleCount
- * @param {import('../models/Setting')} settings
- * @param {import('../models/Reservation')[]} reservationsOfDay
- * @returns {boolean}
- */
 function slotHasCapacity(dateIso, time, peopleCount, settings, reservationsOfDay) {
-  const sameSlotReservations = reservationsOfDay.filter(
-    (reservation) => reservation.time === time,
-  );
+  const sameSlotReservations = reservationsOfDay.filter((reservation) => reservation.time === time);
 
   if (settings.capacityMode === 'total') {
     const occupied = sameSlotReservations.reduce(
@@ -164,10 +119,8 @@ function slotHasCapacity(dateIso, time, peopleCount, settings, reservationsOfDay
     return occupied + peopleCount <= settings.totalCapacity;
   }
 
-  // Mode tables
   const availableTables = settings.tables.map((table) => table.seats);
 
-  // On réserve les tables pour les réservations existantes
   const reservationsSorted = sameSlotReservations
     .slice()
     .sort((a, b) => b.peopleCount - a.peopleCount);
@@ -178,39 +131,23 @@ function slotHasCapacity(dateIso, time, peopleCount, settings, reservationsOfDay
     }
   }
 
-  // On tente d'ajouter la nouvelle réservation.
   return allocateTables(availableTables, peopleCount);
 }
 
-/**
- * Vérifie qu'un horaire appartient bien aux créneaux du jour.
- * @param {string[]} allowedSlots
- * @param {string} time
- */
 function ensureTimeInSlots(allowedSlots, time) {
   if (!allowedSlots.includes(time)) {
     throw new ValidationError("L'horaire demandé n'est pas proposé ce jour-là.");
   }
 }
 
-/**
- * Retourne les paramètres globaux (ou erreur si absents).
- * @returns {Promise<import('../models/Setting')>}
- */
 async function getSettingsOrThrow() {
-  const settings = await Setting.findOne();
+  const settings = await settingsRepository.getSettings();
   if (!settings) {
     throw new NotFoundError('Paramètres indisponibles. Contactez un administrateur.');
   }
   return settings;
 }
 
-/**
- * Calcule les créneaux disponibles pour une date donnée.
- * @param {string} dateIso
- * @param {number} peopleCount
- * @returns {Promise<string[]>}
- */
 async function getAvailability(dateIso, peopleCount = 1) {
   if (!dateIso) {
     throw new ValidationError('La date est obligatoire.');
@@ -227,13 +164,12 @@ async function getAvailability(dateIso, peopleCount = 1) {
   }
 
   const dateParis = parseIsoDateParis(dateIso);
-  const specialDay = await SpecialDay.findOne({ date: dateParis.toDate() });
-  const schedule = await Schedule.findOne({ dayOfWeek: dateParis.day() });
-
+  const schedule = await scheduleRepository.findByDay(dateParis.day());
   if (!schedule) {
     return [];
   }
 
+  const specialDay = await specialDayRepository.findByDate(dateIso);
   const isOpen = specialDay ? specialDay.isOpen : schedule.isOpen;
   if (!isOpen) {
     return [];
@@ -249,19 +185,13 @@ async function getAvailability(dateIso, peopleCount = 1) {
     return [];
   }
 
-  const reservationsOfDay = await Reservation.find({ date: dateParis.toDate() });
+  const reservationsOfDay = await reservationRepository.findByDate(dateIso);
 
   return slotsWithDelay.filter((slot) =>
     slotHasCapacity(dateIso, slot, peopleCount, settings, reservationsOfDay),
   );
 }
 
-/**
- * Crée une réservation après toutes les validations métiers.
- * @param {{ date: string, time: string, peopleCount: number, name: string, email: string, phone: string, comment?: string }} payload
- * @param {'client'|'admin'} source
- * @returns {Promise<import('../models/Reservation')>}
- */
 async function createReservation(payload, source) {
   const settings = await getSettingsOrThrow();
 
@@ -276,16 +206,15 @@ async function createReservation(payload, source) {
   }
 
   const dateParis = parseIsoDateParis(payload.date);
-  const schedule = await Schedule.findOne({ dayOfWeek: dateParis.day() });
-  const specialDay = await SpecialDay.findOne({ date: dateParis.toDate() });
+  const dateIso = dateParis.format('YYYY-MM-DD');
+
+  const schedule = await scheduleRepository.findByDay(dateParis.day());
+  const specialDay = await specialDayRepository.findByDate(dateIso);
 
   if (!schedule) {
-    throw new ValidationError("Aucun horaire défini pour ce jour.");
+    throw new ValidationError('Aucun horaire défini pour ce jour.');
   }
-  if (specialDay && !specialDay.isOpen) {
-    throw new ValidationError('Le restaurant est fermé ce jour-là.');
-  }
-  if (!specialDay && !schedule.isOpen) {
+  if ((specialDay && !specialDay.isOpen) || (!specialDay && !schedule.isOpen)) {
     throw new ValidationError('Le restaurant est fermé ce jour-là.');
   }
 
@@ -295,10 +224,9 @@ async function createReservation(payload, source) {
   const validSlots = filterByDelays(slots, dateParis, settings);
   ensureTimeInSlots(validSlots, payload.time);
 
-  const reservationsOfDay = await Reservation.find({ date: dateParis.toDate() });
-
+  const reservationsOfDay = await reservationRepository.findByDate(dateIso);
   const hasCapacity = slotHasCapacity(
-    payload.date,
+    dateIso,
     payload.time,
     payload.peopleCount,
     settings,
@@ -308,8 +236,8 @@ async function createReservation(payload, source) {
     throw new ValidationError('Capacité atteinte sur ce créneau. Merci de choisir un autre horaire.');
   }
 
-  const reservation = await Reservation.create({
-    date: dateParis.toDate(),
+  const reservation = await reservationRepository.create({
+    date: dateIso,
     time: payload.time,
     name: payload.name,
     email: payload.email,

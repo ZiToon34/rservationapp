@@ -1,18 +1,18 @@
-# Variables d'Environnement pour Render
+﻿# Variables d'Environnement pour Render
 
-## 🔧 Configuration des Variables d'Environnement
+## ðŸ”§ Configuration des Variables d'Environnement
 
-Voici les variables d'environnement à configurer dans Render pour chaque service :
+Voici les variables d'environnement Ã  configurer dans Render pour chaque service :
 
-### 📡 API Backend (reservation-api)
+### ðŸ“¡ API Backend (reservation-api)
 
 #### Variables Automatiques
 - `NODE_ENV` = `production`
 - `PORT` = `10000`
-- `MONGODB_URI` = *(Généré automatiquement par la base de données)*
-- `JWT_SECRET` = *(Généré automatiquement par Render)*
+- `DATABASE_URL` = *(GÃ©nÃ©rÃ© automatiquement par la base de donnÃ©es)*
+- `JWT_SECRET` = *(GÃ©nÃ©rÃ© automatiquement par Render)*
 
-#### Variables à Configurer Manuellement
+#### Variables Ã  Configurer Manuellement
 - `CLIENT_URL` = `https://reservation-client.netlify.app`
 - `SMTP_HOST` = `smtp.gmail.com`
 - `SMTP_PORT` = `587`
@@ -20,37 +20,38 @@ Voici les variables d'environnement à configurer dans Render pour chaque servic
 - `SMTP_PASS` = `votre_mot_de_passe_application_gmail`
 - `SMTP_FROM` = `"Restaurant <contact@restaurant.fr>"`
 
-### 🌐 Application Client (Netlify)
+### ðŸŒ Application Client (Netlify)
 - `VITE_API_URL` = `https://reservation-api.onrender.com/api`
 
-### 👨‍💼 Application Admin (Netlify)
+### ðŸ‘¨â€ðŸ’¼ Application Admin (Netlify)
 - `VITE_API_URL` = `https://reservation-api.onrender.com/api`
 
-### 📱 Application Mobile (Expo)
+### ðŸ“± Application Mobile (Expo)
 - `EXPO_PUBLIC_API_URL` = `https://reservation-api.onrender.com/api`
 
-## 📧 Configuration SMTP Gmail
+## ðŸ“§ Configuration SMTP Gmail
 
 Pour configurer l'envoi d'emails :
 
-1. **Créez un compte Gmail dédié** pour votre restaurant
-2. **Activez l'authentification à 2 facteurs**
-3. **Générez un mot de passe d'application** :
-   - Allez dans Paramètres Google > Sécurité
-   - Activez la validation en 2 étapes
-   - Générez un "mot de passe d'application"
+1. **CrÃ©ez un compte Gmail dÃ©diÃ©** pour votre restaurant
+2. **Activez l'authentification Ã  2 facteurs**
+3. **GÃ©nÃ©rez un mot de passe d'application** :
+   - Allez dans ParamÃ¨tres Google > SÃ©curitÃ©
+   - Activez la validation en 2 Ã©tapes
+   - GÃ©nÃ©rez un "mot de passe d'application"
 4. **Utilisez ces informations** dans les variables SMTP
 
-## 🔒 Sécurité
+## ðŸ”’ SÃ©curitÃ©
 
 - Ne jamais commiter les vraies valeurs dans le code
 - Utilisez des mots de passe d'application pour Gmail
-- Le JWT_SECRET est généré automatiquement par Render
-- La base de données MongoDB est automatiquement sécurisée
+- Le JWT_SECRET est gÃ©nÃ©rÃ© automatiquement par Render
+- La base de donnÃ©es PostgreSQL est automatiquement sÃ©curisÃ©e
 
-## 🚨 Points d'Attention
+## ðŸš¨ Points d'Attention
 
 - Les URLs doivent correspondre exactement aux noms de services Render
-- Vérifiez que CORS est correctement configuré
-- Testez l'envoi d'emails après le déploiement
-- Sauvegardez régulièrement votre base de données
+- VÃ©rifiez que CORS est correctement configurÃ©
+- Testez l'envoi d'emails aprÃ¨s le dÃ©ploiement
+- Sauvegardez rÃ©guliÃ¨rement votre base de donnÃ©es
+

@@ -7,7 +7,7 @@ dotenv.config();
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number.parseInt(process.env.PORT || '4000', 10),
-  mongodbUri: process.env.MONGODB_URI || '',
+  databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || '',
   clientUrl: process.env.CLIENT_URL || '*',
   smtp: {
@@ -19,9 +19,8 @@ const env = {
   },
 };
 
-if (!env.mongodbUri) {
-  // On avertit en console car il s'agit d'un paramètre vital.
-  console.warn('⚠️  MONGODB_URI est vide. Configurez le fichier .env avant de lancer l\'API.');
+if (!env.databaseUrl) {
+  console.warn('⚠️  DATABASE_URL est vide. Configurez la connexion PostgreSQL avant de lancer l\'API.');
 }
 
 if (!env.jwtSecret) {

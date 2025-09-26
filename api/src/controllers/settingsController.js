@@ -1,15 +1,15 @@
 ﻿// src/controllers/settingsController.js
 // Gère les paramètres de capacité, horaires et jours spéciaux côté admin.
-const Setting = require('../models/Setting');
-const Schedule = require('../models/Schedule');
-const SpecialDay = require('../models/SpecialDay');
+const settingsRepository = require('../repositories/settingsRepository');
+const scheduleRepository = require('../repositories/scheduleRepository');
+const specialDayRepository = require('../repositories/specialDayRepository');
 const { ValidationError } = require('../utils/errors');
-const { parseIsoDateParis, dayjs, PARIS_TZ } = require('../utils/time');
+const { parseIsoDateParis } = require('../utils/time');
 const { runPurge } = require('../jobs/purgeJob');
 
 async function getSettings(_req, res, next) {
   try {
-    const settings = await Setting.findOne();
+    const settings = await settingsRepository.getSettings();
     res.json({ success: true, data: settings });
   } catch (error) {
     next(error);
@@ -28,11 +28,7 @@ async function updateSettings(req, res, next) {
     if (payload.reservationDelayMin > payload.reservationDelayMax) {
       throw new ValidationError('Le délai minimum doit être inférieur ou égal au délai maximum.');
     }
-    const settings = await Setting.findOneAndUpdate({}, payload, {
-      new: true,
-      upsert: true,
-      runValidators: true,
-    });
+    const settings = await settingsRepository.upsertSettings(payload);
     res.json({ success: true, data: settings });
   } catch (error) {
     next(error);
@@ -41,7 +37,7 @@ async function updateSettings(req, res, next) {
 
 async function getSchedules(_req, res, next) {
   try {
-    const schedules = await Schedule.find().sort({ dayOfWeek: 1 });
+    const schedules = await scheduleRepository.getAll();
     res.json({ success: true, data: schedules });
   } catch (error) {
     next(error);
@@ -49,10 +45,10 @@ async function getSchedules(_req, res, next) {
 }
 
 function ensureWindowIsOrdered(window) {
-  const start = dayjs.tz(`2000-01-01T${window.start}:00`, PARIS_TZ);
-  const end = dayjs.tz(`2000-01-01T${window.end}:00`, PARIS_TZ);
-  if (!start.isBefore(end)) {
-    throw new ValidationError('L\'heure de début doit être strictement inférieure à l\'heure de fin.');
+  const start = window.start;
+  const end = window.end;
+  if (start >= end) {
+    throw new ValidationError("L'heure de début doit être strictement inférieure à l'heure de fin.");
   }
 }
 
@@ -62,11 +58,7 @@ async function updateSchedule(req, res, next) {
     const update = req.body;
     ensureWindowIsOrdered(update.lunch);
     ensureWindowIsOrdered(update.dinner);
-    const schedule = await Schedule.findOneAndUpdate(
-      { dayOfWeek: Number.parseInt(dayOfWeek, 10) },
-      update,
-      { new: true, upsert: true, runValidators: true },
-    );
+    const schedule = await scheduleRepository.upsert(Number.parseInt(dayOfWeek, 10), update);
     res.json({ success: true, data: schedule });
   } catch (error) {
     next(error);
@@ -76,18 +68,7 @@ async function updateSchedule(req, res, next) {
 async function getSpecialDays(req, res, next) {
   try {
     const { from, to } = req.query;
-    const query = {};
-    const dateQuery = {};
-    if (from) {
-      dateQuery.$gte = parseIsoDateParis(from).toDate();
-    }
-    if (to) {
-      dateQuery.$lte = parseIsoDateParis(to).toDate();
-    }
-    if (Object.keys(dateQuery).length > 0) {
-      query.date = dateQuery;
-    }
-    const days = await SpecialDay.find(query).sort({ date: 1 });
+    const days = await specialDayRepository.findRange(from, to);
     res.json({ success: true, data: days });
   } catch (error) {
     next(error);
@@ -97,12 +78,8 @@ async function getSpecialDays(req, res, next) {
 async function upsertSpecialDay(req, res, next) {
   try {
     const { date, isOpen } = req.body;
-    const parsedDate = parseIsoDateParis(date).toDate();
-    const day = await SpecialDay.findOneAndUpdate(
-      { date: parsedDate },
-      { date: parsedDate, isOpen },
-      { new: true, upsert: true, runValidators: true },
-    );
+    const parsedDate = parseIsoDateParis(date).format('YYYY-MM-DD');
+    const day = await specialDayRepository.upsert(parsedDate, isOpen);
     res.status(201).json({ success: true, data: day });
   } catch (error) {
     next(error);
@@ -111,7 +88,7 @@ async function upsertSpecialDay(req, res, next) {
 
 async function deleteSpecialDay(req, res, next) {
   try {
-    await SpecialDay.findByIdAndDelete(req.params.id);
+    await specialDayRepository.deleteById(req.params.id);
     res.json({ success: true, message: 'Jour spécial supprimé.' });
   } catch (error) {
     next(error);
@@ -137,3 +114,4 @@ module.exports = {
   deleteSpecialDay,
   manualPurge,
 };
+

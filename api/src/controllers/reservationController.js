@@ -1,32 +1,25 @@
 ﻿// src/controllers/reservationController.js
 // Routes publiques et admin liées aux réservations.
-const Reservation = require('../models/Reservation');
+const reservationRepository = require('../repositories/reservationRepository');
 const { getAvailability, createReservation, getSettingsOrThrow } = require('../services/reservationService');
 const { ValidationError, NotFoundError } = require('../utils/errors');
-const { parseIsoDateParis, dayjs } = require('../utils/time');
+const { dayjs } = require('../utils/time');
 const { sendEmail } = require('../utils/email');
 const env = require('../config/env');
 
-/**
- * Retourne la liste des réservations pour un jour (admin).
- */
 async function listAdminReservations(req, res, next) {
   try {
     const { date } = req.query;
     if (!date) {
       throw new ValidationError('Le paramètre date est requis.');
     }
-    const dateParis = parseIsoDateParis(date);
-    const reservations = await Reservation.find({ date: dateParis.toDate() }).sort({ time: 1 });
+    const reservations = await reservationRepository.findByDate(date);
     res.json({ success: true, data: reservations });
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Crée une réservation côté admin en respectant les règles métiers.
- */
 async function createAdminReservation(req, res, next) {
   try {
     const reservation = await createReservation({ ...req.body }, 'admin');
@@ -36,13 +29,10 @@ async function createAdminReservation(req, res, next) {
   }
 }
 
-/**
- * Supprime une réservation.
- */
 async function deleteReservation(req, res, next) {
   try {
     const { id } = req.params;
-    const deleted = await Reservation.findByIdAndDelete(id);
+    const deleted = await reservationRepository.deleteById(id);
     if (!deleted) {
       throw new NotFoundError('Réservation introuvable.');
     }
@@ -52,23 +42,18 @@ async function deleteReservation(req, res, next) {
   }
 }
 
-/**
- * Donne les créneaux publics disponibles pour un jour.
- */
 async function publicAvailability(req, res, next) {
   try {
     const { date, peopleCount } = req.query;
-    const count = typeof peopleCount === 'number' ? peopleCount : 1;
-    const slots = await getAvailability(date, count);
+    const parsedCount = peopleCount ? Number.parseInt(peopleCount, 10) : undefined;
+    const safeCount = Number.isInteger(parsedCount) && parsedCount > 0 ? parsedCount : 1;
+    const slots = await getAvailability(date, safeCount);
     res.json({ success: true, data: slots });
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Crée une réservation publique et envoie un e-mail de confirmation.
- */
 async function publicCreate(req, res, next) {
   try {
     const reservation = await createReservation({ ...req.body }, 'client');
@@ -81,18 +66,13 @@ async function publicCreate(req, res, next) {
     res.status(201).json({
       success: true,
       message: 'Réservation confirmée ! Un e-mail vient de vous être envoyé.',
-      data: { id: reservation._id.toString() },
+      data: { id: reservation.id },
     });
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Génère le HTML de confirmation envoyé au client.
- * @param {{ reservation: import('../models/Reservation'), settings: import('../models/Setting') }} param0
- * @returns {string}
- */
 function buildConfirmationEmail({ reservation }) {
   const dateFormat = dayjs(reservation.date).format('DD/MM/YYYY');
   return `
