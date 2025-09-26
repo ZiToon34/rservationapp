@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Variables d'environnement pour le build
+[context.production.environment]
+  VITE_API_URL = "https://reservation-api.onrender.com/api"
+
+[context.deploy-preview.environment]
+  VITE_API_URL = "https://reservation-api.onrender.com/api"

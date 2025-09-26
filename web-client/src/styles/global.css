@@ -1,0 +1,61 @@
+﻿:root {
+  --primary-color: #b22222;
+}
+
+body {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.calendar-day {
+  border-radius: 0.5rem;
+  min-height: 80px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.calendar-day button {
+  width: 100%;
+}
+
+.calendar-day--disabled {
+  opacity: 0.4;
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.time-slot-button {
+  min-width: 100px;
+}
+
+@media (max-width: 576px) {
+  .calendar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
